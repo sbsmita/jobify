@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Job Appier</title>
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📋 Your Profile</h1>
+      <p class="subtitle">Update your information for quick auto-fill</p>
+    </header>
+
+    <!-- Resume Upload Section -->
+    <section class="section resume-section">
+      <div class="ai-header">
+        <div class="ai-icon">🤖</div>
+        <div class="ai-title">
+          <h2>Quick Setup with AI</h2>
+          <p>Let AI help you fill your profile in seconds</p>
+        </div>
+      </div>
+
+      <div class="info-banner">
+        <div class="info-icon">💡</div>
+        <div class="info-content">
+          <strong>Three ways to complete your profile:</strong>
+          <div class="info-options">
+            <div class="info-option">
+              <span class="option-number">1</span>
+              <div>
+                <strong>Upload PDF Resume</strong>
+                <p>Upload your resume for AI parsing & auto-upload during applications</p>
+              </div>
+            </div>
+            <div class="info-option">
+              <span class="option-number">2</span>
+              <div>
+                <strong>Paste Resume Text</strong>
+                <p>Paste your resume text and let AI auto-fill the form</p>
+              </div>
+            </div>
+            <div class="info-option">
+              <span class="option-number">3</span>
+              <div>
+                <strong>Manual Entry</strong>
+                <p>Fill out the form sections below yourself</p>
+              </div>
+            </div>
+          </div>
+          <div class="auto-save-badge">
+            <span class="pulse-dot"></span>
+            <span>Auto-saves as you type</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="resume-cards">
+        <!-- PDF Resume Upload Card -->
+        <div class="resume-card pdf-card">
+          <div class="card-header">
+            <span class="card-icon">📎</span>
+            <div class="card-title">
+              <h3>Upload Resume PDF</h3>
+              <p>For automatic parsing & job applications</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="file-upload-wrapper">
+              <input type="file" id="resumeFileInput" accept=".pdf" class="file-input">
+              <label for="resumeFileInput" class="file-label">
+                <span class="upload-icon">📄</span>
+                <span class="upload-text">Choose PDF file or drag & drop</span>
+                <span class="upload-subtext">PDF format only</span>
+              </label>
+            </div>
+            <div class="card-actions">
+              <button id="parsePdfBtn" class="btn btn-primary btn-card">
+                <span>🤖</span>
+                <span>Parse with AI</span>
+              </button>
+              <button id="clearResumeFileBtn" class="btn btn-secondary btn-card">
+                <span>🗑️</span>
+                <span>Clear</span>
+              </button>
+            </div>
+            <div id="resumeFileStatus" class="status-inline"></div>
+          </div>
+        </div>
+
+        <!-- Resume Text Paste Card -->
+        <div class="resume-card text-card">
+          <div class="card-header">
+            <span class="card-icon">📄</span>
+            <div class="card-title">
+              <h3>Paste Resume Text</h3>
+              <p>Copy & paste for quick AI auto-fill</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <textarea 
+              id="resumePaste" 
+              class="resume-textarea"
+              placeholder="Paste your complete resume text here...&#10;&#10;Include:&#10;• Work experience&#10;• Education&#10;• Skills&#10;• Projects&#10;• Contact information&#10;&#10;The AI will automatically extract and organize your information!"
+            ></textarea>
+            <div class="card-actions">
+              <button id="parseResumeBtn" class="btn btn-primary btn-card">
+                <span>🤖</span>
+                <span>Parse with AI</span>
+              </button>
+              <button id="clearResumeBtn" class="btn btn-secondary btn-card">
+                <span>🗑️</span>
+                <span>Clear</span>
+              </button>
+            </div>
+            <div id="parseStatus" class="status-inline"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Basic Information -->
+    <section class="section">
+      <h2>👤 Basic Information</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="firstName">First Name *</label>
+          <input type="text" id="firstName" required>
+        </div>
+        <div class="form-group">
+          <label for="lastName">Last Name *</label>
+          <input type="text" id="lastName" required>
+        </div>
+        <div class="form-group">
+          <label for="email">Email Address *</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="phoneCountry">Phone Country</label>
+          <select id="phoneCountry">
+            <option value="UK">🇬🇧 United Kingdom (+44)</option>
+            <option value="US">🇺🇸 United States (+1)</option>
+            <option value="CA">🇨🇦 Canada (+1)</option>
+            <option value="IN">🇮🇳 India (+91)</option>
+            <option value="AU">🇦🇺 Australia (+61)</option>
+            <option value="DE">🇩🇪 Germany (+49)</option>
+            <option value="FR">🇫🇷 France (+33)</option>
+            <option value="NL">🇳🇱 Netherlands (+31)</option>
+            <option value="ES">🇪🇸 Spain (+34)</option>
+            <option value="IT">🇮🇹 Italy (+39)</option>
+            <option value="IE">🇮🇪 Ireland (+353)</option>
+            <option value="SG">🇸🇬 Singapore (+65)</option>
+            <option value="NZ">🇳🇿 New Zealand (+64)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="phone">Mobile Number *</label>
+          <input type="tel" id="phone" required placeholder="e.g., 7123456789">
+        </div>
+      </div>
+    </section>
+
+    <!-- Location Information -->
+    <section class="section">
+      <h2>📍 Location</h2>
+      <div class="form-grid">
+        <div class="form-group full-width">
+          <label for="address">Street Address</label>
+          <input type="text" id="address">
+        </div>
+        <div class="form-group">
+          <label for="city">City</label>
+          <input type="text" id="city">
+        </div>
+        <div class="form-group">
+          <label for="state">State/Province</label>
+          <input type="text" id="state">
+        </div>
+        <div class="form-group">
+          <label for="postalCode">Postal Code</label>
+          <input type="text" id="postalCode">
+        </div>
+        <div class="form-group">
+          <label for="country">Country</label>
+          <input type="text" id="country" value="United States">
+        </div>
+      </div>
+    </section>
+
+    <!-- Demographics -->
+    <section class="section">
+      <h2>🏷️ Demographics (Optional)</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="gender">Gender</label>
+          <select id="gender">
+            <option value="">Prefer not to say</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="disability">Do you have a disability?</label>
+          <select id="disability">
+            <option value="">Prefer not to say</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="veteran">Veteran Status</label>
+          <select id="veteran">
+            <option value="">Prefer not to say</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ethnicity">Ethnicity</label>
+          <select id="ethnicity">
+            <option value="">Prefer not to say</option>
+            <option value="Asian">Asian</option>
+            <option value="Black or African American">Black or African American</option>
+            <option value="Hispanic or Latino">Hispanic or Latino</option>
+            <option value="White">White</option>
+            <option value="Native American">Native American</option>
+            <option value="Pacific Islander">Pacific Islander</option>
+            <option value="Two or more races">Two or more races</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Links -->
+    <section class="section">
+      <h2>🔗 Social & Professional Links</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="linkedin">LinkedIn Profile</label>
+          <input type="url" id="linkedin" placeholder="https://linkedin.com/in/yourprofile">
+        </div>
+        <div class="form-group">
+          <label for="github">GitHub Profile</label>
+          <input type="url" id="github" placeholder="https://github.com/yourusername">
+        </div>
+        <div class="form-group">
+          <label for="portfolio">Portfolio/Website</label>
+          <input type="url" id="portfolio" placeholder="https://yourwebsite.com">
+        </div>
+        <div class="form-group">
+          <label for="twitter">Twitter/X</label>
+          <input type="url" id="twitter" placeholder="https://twitter.com/yourusername">
+        </div>
+      </div>
+    </section>
+
+    <!-- Work Experience -->
+    <section class="section">
+      <h2>💼 Work Experience</h2>
+      <div id="experienceList"></div>
+      <button id="addExperienceBtn" class="btn btn-secondary">+ Add Experience</button>
+    </section>
+
+    <!-- Education -->
+    <section class="section">
+      <h2>🎓 Education</h2>
+      <div id="educationList"></div>
+      <button id="addEducationBtn" class="btn btn-secondary">+ Add Education</button>
+    </section>
+
+    <!-- Projects -->
+    <section class="section">
+      <h2>🚀 Projects</h2>
+      <div id="projectsList"></div>
+      <button id="addProjectBtn" class="btn btn-secondary">+ Add Project</button>
+    </section>
+
+    <!-- Skills -->
+    <section class="section">
+      <h2>💡 Skills</h2>
+      <div class="form-group full-width">
+        <label for="skills">Skills (comma-separated)</label>
+        <textarea id="skills" rows="4" placeholder="JavaScript, Python, React, Node.js, AWS, Docker..."></textarea>
+        <small>Enter your skills separated by commas</small>
+      </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+      <h2>📝 Professional Summary</h2>
+      <div class="form-group full-width">
+        <textarea id="summary" rows="6" placeholder="Write a brief professional summary about yourself..."></textarea>
+      </div>
+    </section>
+
+    <!-- Work Authorization -->
+    <section class="section">
+      <h2>🌍 Work Authorization</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="workAuthorization">Work Authorization Status</label>
+          <select id="workAuthorization">
+            <option value="Authorized">Authorized to work</option>
+            <option value="Citizen">Citizen</option>
+            <option value="Green Card">Green Card Holder</option>
+            <option value="H1B">H1B Visa</option>
+            <option value="Require Sponsorship">Require Sponsorship</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="sponsorshipRequired">Require Visa Sponsorship?</label>
+          <select id="sponsorshipRequired">
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+            <option value="Future">In the future</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <section class="section actions">
+      <button id="saveProfileBtn" class="btn btn-primary btn-large">
+        💾 Save Profile
+      </button>
+      <button id="resetProfileBtn" class="btn btn-danger">
+        🗑️ Clear All Data
+      </button>
+      <button id="backToPopupBtn" class="btn btn-secondary">
+        ← Back to Extension
+      </button>
+    </section>
+
+    <!-- Status Messages -->
+    <div id="statusMessage" class="status-message"></div>
+
+    <!-- Logs -->
+    <section class="section logs-section">
+      <h3>📊 Activity Log</h3>
+      <div id="logs"></div>
+    </section>
+  </div>
+
+  <script src="profile.js"></script>
+</body>
+</html>

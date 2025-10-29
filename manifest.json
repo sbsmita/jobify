@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "AI Job Applier — Apply Assistant",
+  "version": "1.0.0",
+  "description": "Summarize job postings, tailor resume bullets and draft cover letters using Chrome built-in AI (Gemini Nano APIs).",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "downloads",
+    "clipboardWrite",
+    "tabs"                                                                                                                                                                                              
+  ],
+  "host_permissions": [
+    "*://*.linkedin.com/*",
+    "*://*.indeed.com/*",
+    "*://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"                                                                                                                                       
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.linkedin.com/*", "*://*.indeed.com/*", "*://*/*"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "128": "icons/icon128.png"
+  }
+}

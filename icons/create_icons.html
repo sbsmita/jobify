@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<canvas id="canvas16" width="16" height="16"></canvas>
+<canvas id="canvas128" width="128" height="128"></canvas>
+<script>
+function createIcon(canvasId, size) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  
+  // Blue background
+  ctx.fillStyle = '#1a73e8';
+  ctx.fillRect(0, 0, size, size);
+  
+  // White text
+  ctx.fillStyle = 'white';
+  ctx.font = `bold ${size * 0.6}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('J', size/2, size/2);
+  
+  // Download
+  canvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `icon${size}.png`;
+    a.click();
+  });
+}
+
+createIcon('canvas16', 16);
+createIcon('canvas128', 128);
+</script>
+<p>Icons will download automatically. Open this in Chrome and save the icons to the icons folder.</p>
+</body>
+</html>

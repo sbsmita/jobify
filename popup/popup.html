@@ -1,0 +1,84 @@
+<!-- popup/popup.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Job Appier - AI Job Application Assistant</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>✨ Job Appier</h1>
+      <p class="tagline">AI-powered job application assistant</p>
+      <button id="openProfileBtn" class="btn-profile">👤 Manage Profile</button>
+    </header>
+
+    <div id="status" class="status">Ready! Manage your profile to enable auto-fill.</div>
+
+    <!-- Auto-fill Section (OPTIONAL - Top Priority) -->
+    <section class="card autofill-card">
+      <div class="card-header">
+        <h3>🚀 Quick Auto-fill</h3>
+      </div>
+      <p style="font-size: 11px; color: #666; margin-bottom: 8px;">
+        Auto-fills your profile data into job application forms on the current page.
+      </p>
+      <button id="autofillBtn" class="btn-action" style="width: 100%;">
+        🚀 Auto-fill Form on Current Page
+      </button>
+    </section>
+
+    <!-- Job Detection Section -->
+    <section class="card">
+      <div class="card-header">
+        <h3>🎯 Job Description</h3>
+        <div class="btn-group">
+          <button id="readJobBtn" class="btn-secondary">Auto-detect from Page</button>
+          <button id="clearJobBtn" class="btn-text">Clear</button>
+        </div>
+      </div>
+      <textarea id="jobDesc" rows="4" placeholder="Or paste job description manually..."></textarea>
+    </section>
+
+    <!-- Job Summary Section -->
+    <section class="card">
+      <div class="card-header">
+        <h3>📋 Job Summary</h3>
+        <button id="summarizeBtn" class="btn-primary" disabled>✨ Generate Summary</button>
+      </div>
+      <textarea id="jobSummary" rows="3" readonly placeholder="Summary will appear here..."></textarea>
+    </section>
+
+    <!-- Cover Letter Section -->
+    <section class="card">
+      <div class="card-header">
+        <h3>✍️ Cover Letter</h3>
+        <div class="btn-group">
+          <select id="toneSelect" class="select-tone">
+            <option value="formal">Formal</option>
+            <option value="neutral">Neutral</option>
+            <option value="casual">Casual</option>
+          </select>
+          <button id="coverBtn" class="btn-primary" disabled>✨ Generate Cover Letter</button>
+        </div>
+      </div>
+      <textarea id="coverLetter" rows="6" placeholder="Cover letter will appear here..."></textarea>
+      <div class="btn-group">
+        <button id="proofreadBtn" class="btn-secondary" disabled>📝 Proofread</button>
+        <button id="copyBtn" class="btn-secondary" disabled>📋 Copy</button>
+        <button id="exportBtn" class="btn-secondary" disabled>💾 Export</button>
+      </div>
+    </section>
+
+    <!-- Logs Section -->
+    <details class="logs-section">
+      <summary>Activity Log</summary>
+      <div id="logs" class="logs"></div>
+    </details>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
