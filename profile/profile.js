@@ -68,17 +68,18 @@ function debouncedSave() {
 
 // Utility Functions
 function log(message, type = 'info') {
-  const logsEl = document.getElementById('logs');
-  if (!logsEl) return;
-  
+  // Log to browser console since Activity Log UI was removed
   const timestamp = new Date().toLocaleTimeString();
   const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-  const entry = document.createElement('div');
-  entry.textContent = `${icon} [${timestamp}] ${message}`;
-  entry.style.marginBottom = '5px';
-  entry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+  const logMessage = `${icon} [${timestamp}] ${message}`;
   
-  logsEl.insertBefore(entry, logsEl.firstChild);
+  if (type === 'error') {
+    console.error(logMessage);
+  } else if (type === 'success') {
+    console.log('%c' + logMessage, 'color: green; font-weight: bold');
+  } else {
+    console.log(logMessage);
+  }
 }
 
 function showStatus(message, type = 'success') {
@@ -93,6 +94,7 @@ function showStatus(message, type = 'success') {
 }
 
 // AI-Powered Resume Parsing using Prompt API
+// PROVEN approach: Extract each section as plain text, then parse
 async function parseResumeWithAI(resumeText) {
   try {
     log('🤖 Starting AI resume parsing with Prompt API...');
@@ -111,7 +113,7 @@ async function parseResumeWithAI(resumeText) {
       throw new Error('Prompt API not available');
     }
     
-    // Create AI session with output language specified
+    // Create AI session with optimized settings for structured output
     if (!promptSession) {
       if (availability === 'downloadable' || availability === 'downloading') {
         showStatus('⏬ Downloading AI model... Please wait.', 'info');
@@ -121,8 +123,8 @@ async function parseResumeWithAI(resumeText) {
       }
       
       promptSession = await window.LanguageModel.create({
-        temperature: 0.3,  // Lower = faster, more focused responses
-        topK: 3,           // Fewer token candidates = faster processing
+        temperature: 0.1,
+        topK: 1,
         expectedInputs: [
           { type: 'text', languages: ['en'] }
         ],
@@ -137,38 +139,355 @@ async function parseResumeWithAI(resumeText) {
           });
         }
       });
-      log('✓ Prompt API ready with optimized settings');
+      log('✓ Prompt API ready');
     }
     
-    // Optimized prompt - concise but comprehensive
-    const prompt = `Parse this resume and return ONLY valid JSON. Extract ALL work experiences, ALL education entries, and ALL projects.
+    const result = {
+      firstName: '', lastName: '', email: '', phone: '',
+      address: '', city: '', state: '', postalCode: '', country: '',
+      linkedin: '', github: '', portfolio: '', twitter: '',
+      skills: '', summary: '',
+      workExperience: [], education: [], projects: []
+    };
+    
+    // Strategy 1: ONE MASTER PROMPT - Extract everything at once in a clear format
+    try {
+      log('Extracting all data with master prompt...');
+    const masterPrompt = `Extract ALL information from this resume and format it EXACTLY as shown below. If a field is not found, write "N/A".
 
-JSON format:
-{"firstName":"","lastName":"","email":"","phone":"","address":"","city":"","state":"","postalCode":"","country":"","linkedin":"","github":"","portfolio":"","skills":"","summary":"","workExperience":[{"company":"","title":"","startDate":"MM/YYYY","endDate":"MM/YYYY","description":""}],"education":[{"institution":"","degree":"","field":"","graduationDate":"MM/YYYY","gpa":""}],"projects":[{"name":"","description":"","technologies":"","url":""}]}
+BASIC INFO:
+First Name: 
+Last Name: 
+Email: 
+Phone: 
+City: 
+State: 
+LinkedIn: 
+GitHub: 
+Portfolio: 
+
+SKILLS:
+[List all skills as comma-separated values on one line]
+
+SUMMARY:
+[Write a 2-3 sentence professional summary]
+
+WORK EXPERIENCE:
+[For each job, use this EXACT format]
+JOB_START
+Company: 
+Title: 
+Start: [MM/YYYY]
+End: [MM/YYYY or Present]
+Description: [One sentence]
+JOB_END
+
+[Repeat JOB_START...JOB_END for each job]
+
+EDUCATION:
+[For each degree, use this EXACT format]
+EDU_START
+Institution: 
+Degree: 
+Field: 
+Graduated: [MM/YYYY]
+EDU_END
+
+[Repeat EDU_START...EDU_END for each degree]
+
+PROJECTS:
+[For each project, use this EXACT format]
+PROJ_START
+Name: 
+Description: 
+Technologies: 
+PROJ_END
+
+[Repeat PROJ_START...PROJ_END for each project]
 
 Resume:
 ${resumeText}`;
 
-    log('Sending FULL resume to AI for parsing (optimized prompt)...');
-    const response = await promptSession.prompt(prompt);
-    log('AI Response received:', response.substring(0, 500) + '...');
+    const response = await promptSession.prompt(masterPrompt);
+    log('AI response received, parsing...');
     
-    // Extract JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      log('❌ No JSON found in AI response', 'error');
-      throw new Error('AI did not return valid JSON');
+    // Parse the structured response
+    const lines = response.split('\n');
+    let currentSection = '';
+    let currentJob = null;
+    let currentEdu = null;
+    let currentProj = null;
+    
+    for (let line of lines) {
+      const trimmed = line.trim();
+      
+      // Detect sections
+      if (trimmed.startsWith('BASIC INFO:')) {
+        currentSection = 'basic';
+        continue;
+      } else if (trimmed.startsWith('SKILLS:')) {
+        currentSection = 'skills';
+        continue;
+      } else if (trimmed.startsWith('SUMMARY:')) {
+        currentSection = 'summary';
+        continue;
+      } else if (trimmed.startsWith('WORK EXPERIENCE:')) {
+        currentSection = 'work';
+        continue;
+      } else if (trimmed.startsWith('EDUCATION:')) {
+        currentSection = 'education';
+        continue;
+      } else if (trimmed.startsWith('PROJECTS:')) {
+        currentSection = 'projects';
+        continue;
+      }
+      
+      // Parse basic info
+      if (currentSection === 'basic') {
+        if (trimmed.startsWith('First Name:')) {
+          result.firstName = trimmed.substring(11).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('Last Name:')) {
+          result.lastName = trimmed.substring(10).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('Email:')) {
+          result.email = trimmed.substring(6).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('Phone:')) {
+          result.phone = trimmed.substring(6).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('City:')) {
+          result.city = trimmed.substring(5).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('State:')) {
+          result.state = trimmed.substring(6).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('LinkedIn:')) {
+          result.linkedin = trimmed.substring(9).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('GitHub:')) {
+          result.github = trimmed.substring(7).trim().replace(/N\/A/i, '');
+        } else if (trimmed.startsWith('Portfolio:')) {
+          result.portfolio = trimmed.substring(10).trim().replace(/N\/A/i, '');
+        }
+      }
+      
+      // Parse skills
+      if (currentSection === 'skills' && trimmed && !trimmed.startsWith('SKILLS:')) {
+        result.skills = trimmed;
+        currentSection = '';
+      }
+      
+      // Parse summary
+      if (currentSection === 'summary' && trimmed && !trimmed.startsWith('SUMMARY:')) {
+        if (!result.summary) result.summary = trimmed;
+        else result.summary += ' ' + trimmed;
+      }
+      
+      // Parse work experience
+      if (currentSection === 'work') {
+        if (trimmed === 'JOB_START') {
+          currentJob = { company: '', title: '', location: '', startDate: '', endDate: '', description: '' };
+        } else if (trimmed === 'JOB_END' && currentJob) {
+          if (currentJob.company && currentJob.title) {
+            result.workExperience.push(currentJob);
+          }
+          currentJob = null;
+        } else if (currentJob) {
+          if (trimmed.startsWith('Company:')) {
+            currentJob.company = trimmed.substring(8).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Title:')) {
+            currentJob.title = trimmed.substring(6).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Start:')) {
+            const date = trimmed.substring(6).trim().replace(/N\/A/i, '');
+            currentJob.startDate = date.replace(/[^0-9\/]/g, '').substring(0, 7);
+          } else if (trimmed.startsWith('End:')) {
+            const date = trimmed.substring(4).trim();
+            currentJob.endDate = date.toLowerCase().includes('present') ? 'Present' : date.replace(/[^0-9\/]/g, '').substring(0, 7);
+          } else if (trimmed.startsWith('Description:')) {
+            currentJob.description = trimmed.substring(12).trim().replace(/N\/A/i, '');
+          }
+        }
+      }
+      
+      // Parse education
+      if (currentSection === 'education') {
+        if (trimmed === 'EDU_START') {
+          currentEdu = { institution: '', degree: '', field: '', graduationDate: '', gpa: '' };
+        } else if (trimmed === 'EDU_END' && currentEdu) {
+          if (currentEdu.institution && currentEdu.degree) {
+            result.education.push(currentEdu);
+          }
+          currentEdu = null;
+        } else if (currentEdu) {
+          if (trimmed.startsWith('Institution:')) {
+            currentEdu.institution = trimmed.substring(12).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Degree:')) {
+            currentEdu.degree = trimmed.substring(7).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Field:')) {
+            currentEdu.field = trimmed.substring(6).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Graduated:')) {
+            const date = trimmed.substring(10).trim().replace(/N\/A/i, '');
+            currentEdu.graduationDate = date.replace(/[^0-9\/]/g, '').substring(0, 7);
+          }
+        }
+      }
+      
+      // Parse projects
+      if (currentSection === 'projects') {
+        if (trimmed === 'PROJ_START') {
+          currentProj = { name: '', description: '', technologies: '', url: '' };
+        } else if (trimmed === 'PROJ_END' && currentProj) {
+          if (currentProj.name) {
+            result.projects.push(currentProj);
+          }
+          currentProj = null;
+        } else if (currentProj) {
+          if (trimmed.startsWith('Name:')) {
+            currentProj.name = trimmed.substring(5).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Description:')) {
+            currentProj.description = trimmed.substring(12).trim().replace(/N\/A/i, '');
+          } else if (trimmed.startsWith('Technologies:')) {
+            currentProj.technologies = trimmed.substring(13).trim().replace(/N\/A/i, '');
+          }
+        }
+      }
     }
     
-    const parsed = JSON.parse(jsonMatch[0]);
-    log('✅ AI parsing completed successfully!');
-    log(`Parsed data: ${parsed.workExperience?.length || 0} work experiences, ${parsed.education?.length || 0} education entries, ${parsed.projects?.length || 0} projects`);
+    log(`✅ Extraction complete!`);
+    log(`📊 Results: ${result.firstName} ${result.lastName}`);
+    log(`   Email: ${result.email}, Phone: ${result.phone}`);
+    log(`   ${result.workExperience.length} jobs, ${result.education.length} degrees, ${result.projects.length} projects`);
     
-    return parsed;
+    if (isValidResumeStructure(result)) {
+      return result;
+    }
+  } catch (e) {
+    log(`⚠️ Strategy 1 (Master prompt) failed: ${e.message}`);
+  }
     
+    // If Strategy 1 failed, throw error
+    throw new Error('Could not extract enough information from resume. Please check the format and try again.');
   } catch (error) {
     log(`❌ AI parsing error: ${error.message}`, 'error');
     throw error;
+  }
+}
+
+// Strategy 3: Question-answer format (most reliable fallback)
+async function parseResumeWithAI_Fallback(resumeText) {
+    log('Strategy 3: Simple question-answer extraction...');
+    try {
+      const result = {
+        firstName: '', lastName: '', email: '', phone: '',
+        address: '', city: '', state: '', postalCode: '', country: '',
+        linkedin: '', github: '', portfolio: '', twitter: '',
+        skills: '', summary: '',
+        workExperience: [], education: [], projects: []
+      };
+      
+      // Ask simple questions
+      const qa1 = await promptSession.prompt(`What is the person's first and last name in this resume? Answer with just the name.\n\n${resumeText.substring(0, 500)}`);
+      const nameParts = qa1.trim().split(' ');
+      result.firstName = nameParts[0] || '';
+      result.lastName = nameParts.slice(1).join(' ') || '';
+      
+      const qa2 = await promptSession.prompt(`What is the email address in this resume? Answer with just the email.\n\n${resumeText.substring(0, 500)}`);
+      result.email = qa2.trim();
+      
+      const qa3 = await promptSession.prompt(`What is the phone number in this resume? Answer with just the phone.\n\n${resumeText.substring(0, 500)}`);
+      result.phone = qa3.trim();
+      
+      const qa4 = await promptSession.prompt(`List the person's skills from this resume as comma-separated values.\n\n${resumeText}`);
+      result.skills = qa4.trim();
+      
+      log(`✓ Extracted: ${result.firstName} ${result.lastName}, ${result.email}`);
+      
+      if (isValidResumeStructure(result)) {
+        log('✅ Strategy 3 (Q&A) succeeded!');
+        return result;
+      }
+    } catch (e) {
+      log(`⚠️ Strategy 3 failed: ${e.message}`);
+    }
+    
+    // If all strategies fail, throw error
+    log('❌ All parsing strategies failed', 'error');
+    throw new Error('AI could not parse the resume reliably. Please try:\n1. Simplifying the resume format\n2. Removing special characters\n3. Pasting plain text instead of formatted text');
+}
+
+// Validate that the parsed structure has minimum required fields
+function isValidResumeStructure(data) {
+  if (!data || typeof data !== 'object') return false;
+  
+  // At minimum, we need either name + email OR at least one work experience
+  const hasBasicInfo = (data.firstName || data.lastName || data.email);
+  const hasWorkExp = (Array.isArray(data.workExperience) && data.workExperience.length > 0);
+  
+  return hasBasicInfo || hasWorkExp;
+}
+
+// Robustly extract and parse JSON from AI text output
+function safeParseJsonFromText(text) {
+  if (!text) return null;
+  let clean = text.trim();
+  // Strip common code fences if present
+  if (clean.startsWith('```json')) clean = clean.slice(7);
+  if (clean.startsWith('```')) clean = clean.slice(3);
+  if (clean.endsWith('```')) clean = clean.slice(0, -3);
+  clean = clean.trim();
+  
+  // Replace smart quotes and other problematic characters
+  clean = clean.replace(/[""]/g, '"').replace(/['']/g, "'");
+  
+  // Find the largest balanced {...}
+  let start = clean.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < clean.length; i++) {
+    const ch = clean[i];
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) { end = i + 1; break; }
+    }
+  }
+  if (end === -1) return null;
+  let candidate = clean.slice(start, end);
+  
+  // Multiple repair strategies
+  // 1. Remove trailing commas before } or ]
+  candidate = candidate.replace(/,\s*([}\]])/g, '$1');
+  
+  // 2. Remove control characters (except newlines and tabs)
+  candidate = candidate.replace(/[\u0000-\u0008\u000B-\u000C\u000E-\u001F\u007F]/g, '');
+  
+  // 3. Fix bad escape sequences: replace backslashes not part of valid escapes
+  // Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+  candidate = candidate.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+  
+  // 4. Fix unescaped quotes inside strings (this is tricky, simplified approach)
+  // Replace newlines inside string values with \n
+  candidate = candidate.replace(/"([^"]*?)(\r?\n)([^"]*?)"/g, (match, p1, p2, p3) => {
+    return `"${p1}\\n${p3}"`;
+  });
+  
+  // Try parsing
+  try {
+    return JSON.parse(candidate);
+  } catch (e) {
+    console.log('JSON parse attempt 1 failed:', e.message);
+    
+    // Try removing all backslashes except those before quotes
+    try {
+      let repaired = candidate.replace(/\\(?!")/g, '');
+      return JSON.parse(repaired);
+    } catch (e2) {
+      console.log('JSON parse attempt 2 failed:', e2.message);
+      
+      // Try double-escaping all backslashes
+      try {
+        let repaired = candidate.replace(/\\/g, '\\\\');
+        return JSON.parse(repaired);
+      } catch (e3) {
+        console.log('JSON parse attempt 3 failed:', e3.message);
+        return null;
+      }
+    }
   }
 }
 
@@ -581,6 +900,7 @@ async function handleParsePdf() {
   const fileInput = document.getElementById('resumeFileInput');
   const parsePdfBtn = document.getElementById('parsePdfBtn');
   const statusEl = document.getElementById('resumeFileStatus');
+  const progressBar = document.getElementById('resumeProgressBar');
   
   const file = fileInput.files[0];
   if (!file) {
@@ -606,36 +926,33 @@ async function handleParsePdf() {
     statusEl.style.background = '#e7f3ff';
     statusEl.style.color = '#0066cc';
     statusEl.innerHTML = '📄 Reading PDF file...';
+    if (progressBar) {
+      progressBar.style.display = 'block';
+      progressBar.querySelector('.bar-fg').style.width = '10%';
+    }
     
     // Read PDF file as text using FileReader and simple text extraction
     const reader = new FileReader();
     
     reader.onload = async (e) => {
       try {
+        if (progressBar) progressBar.querySelector('.bar-fg').style.width = '30%';
         const arrayBuffer = e.target.result;
         const uint8Array = new Uint8Array(arrayBuffer);
         let pdfText = '';
-        
-        // Try multiple decoding strategies for better PDF text extraction
-        
-        // Strategy 1: UTF-8 decoding with text extraction
+        // ...existing code for extraction...
+        // Strategy 1
         try {
           const decoder = new TextDecoder('utf-8', { fatal: false });
           const fullText = decoder.decode(uint8Array);
-          
-          // Extract text objects from PDF
-          // PDFs store text in between BT (BeginText) and ET (EndText) operators
           const textMatches = fullText.matchAll(/BT\s*(.*?)\s*ET/gs);
           for (const match of textMatches) {
-            // Extract text from Tj operators: (text)Tj
             const tjMatches = match[1].matchAll(/\((.*?)\)Tj/g);
             for (const tj of tjMatches) {
               pdfText += tj[1].replace(/\\(.)/g, '$1') + ' ';
             }
             pdfText += '\n';
           }
-          
-          // Also try to extract from TJ array operators: [(text1)(text2)]TJ
           const tjArrayMatches = fullText.matchAll(/\[(.*?)\]TJ/gs);
           for (const match of tjArrayMatches) {
             const textParts = match[1].matchAll(/\((.*?)\)/g);
@@ -644,79 +961,48 @@ async function handleParsePdf() {
             }
             pdfText += '\n';
           }
-        } catch (e) {
-          log('Strategy 1 failed, trying alternative methods...', 'info');
-        }
-        
-        // Strategy 2: Look for plain text in the PDF stream (fallback)
+        } catch (e) { log('Strategy 1 failed, trying alternative methods...', 'info'); }
+        // Strategy 2
         if (pdfText.length < 50) {
           try {
             const latin1Decoder = new TextDecoder('latin1', { fatal: false });
             const rawText = latin1Decoder.decode(uint8Array);
-            
-            // Extract readable text (sequences of printable characters)
             const readableTextMatches = rawText.matchAll(/[\x20-\x7E]{4,}/g);
             const extractedStrings = [];
-            
             for (const match of readableTextMatches) {
               const text = match[0];
-              // Filter out PDF keywords and keep meaningful text
               if (!text.match(/^(obj|endobj|stream|endstream|xref|trailer|startxref|\/Type|\/Font|\/Page|\/Catalog|\/Length|\/Filter)$/)) {
                 extractedStrings.push(text);
               }
             }
-            
-            // Join extracted strings with spaces
             pdfText = extractedStrings.join(' ');
-            
-            // Clean up common PDF artifacts
-            pdfText = pdfText
-              .replace(/[\/\\]/g, ' ')
-              .replace(/\s+/g, ' ')
-              .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase
-              .trim();
-          } catch (e) {
-            log('Strategy 2 failed', 'info');
-          }
+            pdfText = pdfText.replace(/[\/\\]/g, ' ').replace(/\s+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
+          } catch (e) { log('Strategy 2 failed', 'info'); }
         }
-        
-        // Strategy 3: Extract any parenthesized strings (last resort)
+        // Strategy 3
         if (pdfText.length < 50) {
           try {
             const utf8Text = new TextDecoder('utf-8', { fatal: false }).decode(uint8Array);
             const stringMatches = utf8Text.matchAll(/\(([^)]{3,})\)/g);
             const strings = [];
-            
             for (const match of stringMatches) {
-              const str = match[1]
-                .replace(/\\n/g, '\n')
-                .replace(/\\r/g, '')
-                .replace(/\\t/g, ' ')
-                .replace(/\\(.)/g, '$1');
-              
-              if (str.length > 2 && !str.match(/^[0-9.]+$/)) {
-                strings.push(str);
-              }
+              const str = match[1].replace(/\\n/g, '\n').replace(/\\r/g, '').replace(/\\t/g, ' ').replace(/\\(.)/g, '$1');
+              if (str.length > 2 && !str.match(/^[0-9.]+$/)) { strings.push(str); }
             }
-            
             pdfText = strings.join(' ');
-          } catch (e) {
-            log('Strategy 3 failed', 'info');
-          }
+          } catch (e) { log('Strategy 3 failed', 'info'); }
         }
-        
         pdfText = pdfText.trim();
-        
         if (pdfText.length < 50) {
           throw new Error('Could not extract enough text from PDF. The PDF might be:\n• Scanned (image-based) - try converting to text first\n• Encrypted or password-protected\n• Using complex encoding\n\nTry pasting the text directly instead.');
         }
-        
+        if (progressBar) progressBar.querySelector('.bar-fg').style.width = '60%';
         statusEl.innerHTML = `✅ Extracted ${pdfText.length} characters from PDF. Parsing with AI...`;
         log(`PDF text extracted: ${pdfText.substring(0, 200)}...`);
-        
         // Now parse the extracted text with AI
         await parseResumeText(pdfText, parsePdfBtn, statusEl);
-        
+        if (progressBar) progressBar.querySelector('.bar-fg').style.width = '100%';
+        setTimeout(() => { if (progressBar) progressBar.style.display = 'none'; }, 1200);
       } catch (error) {
         statusEl.style.background = '#fee';
         statusEl.style.color = '#c00';
@@ -724,6 +1010,7 @@ async function handleParsePdf() {
         log(`PDF extraction error: ${error.message}`, 'error');
         parsePdfBtn.disabled = false;
         parsePdfBtn.innerHTML = '🤖 Parse PDF';
+        if (progressBar) progressBar.style.display = 'none';
       }
     };
     
@@ -760,6 +1047,14 @@ async function parseResumeText(resumeText, button, statusElement) {
     return;
   }
   
+  // Show and animate the progress bar
+  const progressBar = document.getElementById('parseProgressBar');
+  const progressFill = document.getElementById('parseProgressBarFill');
+  if (progressBar && progressFill) {
+    progressBar.style.visibility = 'visible';
+    progressFill.style.width = '10%';
+    progressFill.textContent = '10%';
+  }
   try {
     button.disabled = true;
     button.innerHTML = '<div class="spinner"></div> Parsing...';
@@ -768,21 +1063,32 @@ async function parseResumeText(resumeText, button, statusElement) {
     statusElement.style.display = 'block';
     statusElement.style.background = '#e7f3ff';
     statusElement.style.color = '#0066cc';
-    
+    // Animate progress bar during parsing
+    let progress = 10;
+    const progressStep = 7;
+    const progressInterval = setInterval(() => {
+      progress = Math.min(progress + progressStep, 90);
+      if (progressFill) {
+        progressFill.style.width = progress + '%';
+        progressFill.textContent = progress + '%';
+      }
+    }, 700);
     // Add elapsed time indicator
     const startTime = Date.now();
-    const progressInterval = setInterval(() => {
+    const elapsedInterval = setInterval(() => {
       const elapsed = Math.round((Date.now() - startTime) / 1000);
-      statusElement.textContent = `🤖 AI is analyzing your resume... (${elapsed}s)`;
+      statusElement.textContent = `🤖 AI is analyzing your resume... (${elapsed}s) - Might take 5-15 minutes`;
     }, 1000);
-    
     try {
       const parsed = await parseResumeWithAI(resumeText);
-      
       clearInterval(progressInterval);
+      clearInterval(elapsedInterval);
+      if (progressFill) {
+        progressFill.style.width = '100%';
+        progressFill.textContent = '100%';
+      }
       const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
       log(`✅ Parsing completed in ${totalTime}s`);
-      
       // Merge parsed data into profile
       if (parsed.firstName) profileData.firstName = parsed.firstName;
       if (parsed.lastName) profileData.lastName = parsed.lastName;
@@ -799,36 +1105,34 @@ async function parseResumeText(resumeText, button, statusElement) {
       if (parsed.twitter) profileData.twitter = parsed.twitter;
       if (parsed.skills) profileData.skills = parsed.skills;
       if (parsed.summary) profileData.summary = parsed.summary;
-      
       if (parsed.workExperience && Array.isArray(parsed.workExperience)) {
         profileData.workExperience = parsed.workExperience;
         log(`✓ Loaded ${parsed.workExperience.length} work experience entries`);
       }
-      
       if (parsed.education && Array.isArray(parsed.education)) {
         profileData.education = parsed.education;
         log(`✓ Loaded ${parsed.education.length} education entries`);
       }
-      
       if (parsed.projects && Array.isArray(parsed.projects)) {
         profileData.projects = parsed.projects;
         log(`✓ Loaded ${parsed.projects.length} project entries`);
       }
-      
       // Populate form with parsed data
       populateForm(profileData);
-      
       statusElement.textContent = `✅ Resume parsed in ${totalTime}s! Review and edit the fields below.`;
       statusElement.className = 'status success';
       statusElement.style.background = '#d4edda';
       statusElement.style.color = '#155724';
-      
       showStatus('✅ Resume parsed successfully!', 'success');
     } catch (error) {
-      clearInterval(progressInterval); // Clean up timer on error
-      throw error; // Re-throw to outer catch
+      clearInterval(progressInterval);
+      clearInterval(elapsedInterval);
+      if (progressFill) {
+        progressFill.style.width = '0%';
+        progressFill.textContent = '';
+      }
+      throw error;
     }
-    
   } catch (error) {
     statusElement.textContent = `❌ Parsing failed: ${error.message}`;
     statusElement.className = 'status error';
@@ -838,6 +1142,10 @@ async function parseResumeText(resumeText, button, statusElement) {
   } finally {
     button.disabled = false;
     button.innerHTML = button.id === 'parsePdfBtn' ? '🤖 Parse PDF' : '<span>🤖 Parse with AI</span>';
+    if (progressFill) {
+      progressFill.style.width = '0%';
+      progressFill.textContent = '';
+    }
   }
 }
 

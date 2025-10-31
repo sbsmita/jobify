@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - Job Appier</title>
+  <title>Profile - JobBuddy</title>
   <link rel="stylesheet" href="profile.css">
 </head>
 <body>
@@ -26,24 +26,17 @@
       <div class="info-banner">
         <div class="info-icon">💡</div>
         <div class="info-content">
-          <strong>Three ways to complete your profile:</strong>
+          <strong>Two ways to complete your profile:</strong>
           <div class="info-options">
             <div class="info-option">
               <span class="option-number">1</span>
               <div>
-                <strong>Upload PDF Resume</strong>
-                <p>Upload your resume for AI parsing & auto-upload during applications</p>
+                <strong>Paste Resume Text & AI Auto-fill</strong>
+                <p>Paste your resume text and let AI auto-fill the form instantly</p>
               </div>
             </div>
             <div class="info-option">
               <span class="option-number">2</span>
-              <div>
-                <strong>Paste Resume Text</strong>
-                <p>Paste your resume text and let AI auto-fill the form</p>
-              </div>
-            </div>
-            <div class="info-option">
-              <span class="option-number">3</span>
               <div>
                 <strong>Manual Entry</strong>
                 <p>Fill out the form sections below yourself</p>
@@ -58,26 +51,27 @@
       </div>
       
       <div class="resume-cards">
-        <!-- PDF Resume Upload Card -->
-        <div class="resume-card pdf-card">
+        <!-- PDF Resume Upload Card (Mandatory) -->
+        <div class="resume-card pdf-card" style="border:2px solid #667eea;box-shadow:0 0 0 2px #667eea22;">
           <div class="card-header">
             <span class="card-icon">📎</span>
             <div class="card-title">
-              <h3>Upload Resume PDF</h3>
-              <p>For automatic parsing & job applications</p>
+              <h3>Upload Resume PDF <span style="color:#dc3545;font-size:18px;vertical-align:middle;">*</span></h3>
+              <p style="font-weight:600;color:#333;">Required for autofill and job applications</p>
             </div>
           </div>
           <div class="card-content">
             <div class="file-upload-wrapper">
-              <input type="file" id="resumeFileInput" accept=".pdf" class="file-input">
+              <input type="file" id="resumeFileInput" accept=".pdf" class="file-input" required>
               <label for="resumeFileInput" class="file-label">
                 <span class="upload-icon">📄</span>
                 <span class="upload-text">Choose PDF file or drag & drop</span>
-                <span class="upload-subtext">PDF format only</span>
+                <span class="upload-subtext">PDF format only (required)</span>
               </label>
             </div>
             <div class="card-actions">
-              <button id="parsePdfBtn" class="btn btn-primary btn-card">
+              
+              <button id="parsePdfBtn" class="btn btn-primary btn-card" disabled style="opacity:0.6;cursor:not-allowed;">
                 <span>🤖</span>
                 <span>Parse with AI</span>
               </button>
@@ -87,24 +81,26 @@
               </button>
             </div>
             <div id="resumeFileStatus" class="status-inline"></div>
+            <div id="resumeProgressBar" class="progress-bar" style="display:none;margin-top:10px;">
+              <div class="bar-fg" style="width:0%"></div>
+            </div>
+            <div class="coming-soon-banner" style="margin-top:12px;">
+              <span>🚧</span> <span>AI-powered PDF parsing is coming soon. For now, your PDF will be saved for future autofill.</span>
+            </div>
           </div>
         </div>
 
-        <!-- Resume Text Paste Card -->
+        <!-- Resume Text Paste Card (Enabled) -->
         <div class="resume-card text-card">
           <div class="card-header">
-            <span class="card-icon">📄</span>
+            <span class="card-icon">🤖</span>
             <div class="card-title">
               <h3>Paste Resume Text</h3>
               <p>Copy & paste for quick AI auto-fill</p>
             </div>
           </div>
           <div class="card-content">
-            <textarea 
-              id="resumePaste" 
-              class="resume-textarea"
-              placeholder="Paste your complete resume text here...&#10;&#10;Include:&#10;• Work experience&#10;• Education&#10;• Skills&#10;• Projects&#10;• Contact information&#10;&#10;The AI will automatically extract and organize your information!"
-            ></textarea>
+            <textarea id="resumePaste" class="resume-textarea" placeholder="Paste your complete resume text here...&#10;&#10;Include:&#10;• Work experience&#10;• Education&#10;• Skills&#10;• Projects&#10;• Contact information&#10;&#10;The AI will automatically extract and organize your information!"></textarea>
             <div class="card-actions">
               <button id="parseResumeBtn" class="btn btn-primary btn-card">
                 <span>🤖</span>
@@ -114,6 +110,11 @@
                 <span>🗑️</span>
                 <span>Clear</span>
               </button>
+            </div>
+            <div style="margin-top:10px;">
+              <div id="parseProgressBar" style="width:100%;height:18px;background:#eee;border-radius:8px;overflow:hidden;border:1px solid #ccc;">
+                <div id="parseProgressBarFill" style="height:100%;width:0%;background:#667eea;color:#fff;text-align:center;line-height:18px;font-size:13px;transition:none;"></div>
+              </div>
             </div>
             <div id="parseStatus" class="status-inline"></div>
           </div>
@@ -338,12 +339,6 @@
 
     <!-- Status Messages -->
     <div id="statusMessage" class="status-message"></div>
-
-    <!-- Logs -->
-    <section class="section logs-section">
-      <h3>📊 Activity Log</h3>
-      <div id="logs"></div>
-    </section>
   </div>
 
   <script src="profile.js"></script>

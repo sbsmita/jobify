@@ -4,15 +4,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Job Appier - AI Job Application Assistant</title>
+  <title>JobBuddy - AI Job Application Assistant</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>✨ Job Appier</h1>
+      <h1>✨ JobBuddy</h1>
       <p class="tagline">AI-powered job application assistant</p>
-      <button id="openProfileBtn" class="btn-profile">👤 Manage Profile</button>
+      <button id="openProfileBtn" class="btn-profile">👤 Profile</button>
     </header>
 
     <div id="status" class="status">Ready! Manage your profile to enable auto-fill.</div>
@@ -46,7 +46,7 @@
     <section class="card">
       <div class="card-header">
         <h3>📋 Job Summary</h3>
-        <button id="summarizeBtn" class="btn-primary" disabled>✨ Generate Summary</button>
+        <button id="summarizeBtn" class="btn-primary" disabled><span>✨ Generate Summary</span></button>
       </div>
       <textarea id="jobSummary" rows="3" readonly placeholder="Summary will appear here..."></textarea>
     </section>
@@ -61,22 +61,16 @@
             <option value="neutral">Neutral</option>
             <option value="casual">Casual</option>
           </select>
-          <button id="coverBtn" class="btn-primary" disabled>✨ Generate Cover Letter</button>
+          <button id="coverBtn" class="btn-primary" disabled><span>✨ Generate Cover Letter</span></button>
         </div>
       </div>
       <textarea id="coverLetter" rows="6" placeholder="Cover letter will appear here..."></textarea>
       <div class="btn-group">
-        <button id="proofreadBtn" class="btn-secondary" disabled>📝 Proofread</button>
+        <!-- <button id="proofreadBtn" class="btn-secondary" disabled>📝 Proofread</button> -->
         <button id="copyBtn" class="btn-secondary" disabled>📋 Copy</button>
         <button id="exportBtn" class="btn-secondary" disabled>💾 Export</button>
       </div>
     </section>
-
-    <!-- Logs Section -->
-    <details class="logs-section">
-      <summary>Activity Log</summary>
-      <div id="logs" class="logs"></div>
-    </details>
   </div>
 
   <script src="popup.js"></script>

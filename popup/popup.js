@@ -20,9 +20,19 @@ function log(msg, isError = false) {
   logsEl.innerText = `${prefix} [${timestamp}] ${msg}\n` + logsEl.innerText;
 }
 
-function updateStatus(msg) {
+function updateStatus(msg, type = 'normal') {
   const statusEl = document.getElementById('status');
-  if (statusEl) statusEl.innerText = msg;
+  if (statusEl) {
+    statusEl.innerText = msg;
+    // Red color for error/warning messages
+    if (type === 'error') {
+      statusEl.style.color = '#dc3545';
+      statusEl.style.background = '#fee';
+    } else {
+      statusEl.style.color = '#10b981';
+      statusEl.style.background = 'white';
+    }
+  }
 }
 
 // ========== CHROME AI API WRAPPERS ==========
@@ -298,15 +308,27 @@ ${resumeText.substring(0, 3000)}`;
   try {
     const response = await aiPrompt(prompt);
     if (!response) return null;
-    
-    // Try to parse JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    // Try to extract the largest JSON block
+    let jsonMatch = response.match(/\{[\s\S]*\}/);
+    let parsed = null;
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
-      log('✓ AI parsed resume successfully');
-      return parsed;
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        // Try to repair common issues: remove trailing commas, fix smart quotes
+        let repaired = jsonMatch[0]
+          .replace(/,\s*([}\]])/g, '$1')
+          .replace(/[“”]/g, '"').replace(/[‘’]/g, "'");
+        try { parsed = JSON.parse(repaired); } catch (e2) { parsed = null; }
+      }
     }
-    return null;
+    if (!parsed) {
+      log('❌ No valid JSON found or parse error in AI response', true);
+      log('Raw AI output for debugging:', response, true);
+      return null;
+    }
+    log('✓ AI parsed resume successfully');
+    return parsed;
   } catch (error) {
     log(`AI resume parsing failed: ${error.message}`, true);
     return null;
@@ -613,7 +635,7 @@ async function autofillForm() {
     
     if (!profileData && !resumeText) {
       log('⚠️ No profile or resume data to auto-fill', true);
-      updateStatus('Please set up your profile or paste your resume first!');
+      updateStatus('Please set up your profile or paste your resume first!', 'error');
       return;
     }
     
@@ -840,6 +862,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       updateStatus('Summarizing job description...');
       summarizeBtn.disabled = true;
+      summarizeBtn.classList.add('btn-loading');
       log('Starting summarization...');
       
       const summary = await summarizeText(jobText);
@@ -854,6 +877,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       log(`Summarization error: ${error.message}`, true);
     } finally {
       summarizeBtn.disabled = false;
+      summarizeBtn.classList.remove('btn-loading');
     }
   });
   
@@ -873,7 +897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Load profile data from storage
       const result = await chrome.storage.local.get(['userProfile']);
       if (!result.userProfile) {
-        alert('No profile found. Please set up your profile first by clicking "Manage Profile".');
+        alert('No profile found. Please set up your profile first by clicking "Profile".');
         return;
       }
       
@@ -912,6 +936,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       updateStatus('Generating cover letter...');
       coverBtn.disabled = true;
+      coverBtn.classList.add('btn-loading');
       log('Starting cover letter generation from profile data...');
       
       let summary = jobSummaryEl.value;
@@ -929,7 +954,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       
       updateStatus('Cover letter generated!');
       
-      proofreadBtn.disabled = false;
+      if (proofreadBtn) proofreadBtn.disabled = false;
       copyBtn.disabled = false;
       exportBtn.disabled = false;
     } catch (error) {
@@ -938,29 +963,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       log(`Cover letter error: ${error.message}`, true);
     } finally {
       coverBtn.disabled = false;
+      coverBtn.classList.remove('btn-loading');
     }
   });
   
   // Proofread handler
-  proofreadBtn.addEventListener('click', async () => {
-    const text = coverLetterEl.value;
-    if (!text) return;
-    
-    try {
-      updateStatus('Proofreading...');
-      proofreadBtn.disabled = true;
+  if (proofreadBtn) {
+    proofreadBtn.addEventListener('click', async () => {
+      const text = coverLetterEl.value;
+      if (!text) return;
       
-      const result = await proofreadText(text);
-      coverLetterEl.value = result.corrected || result.correctedText || text;
-      
-      updateStatus('Proofreading complete!');
-    } catch (error) {
-      updateStatus('Proofreading failed');
-      log(`Proofread error: ${error.message}`, true);
-    } finally {
-      proofreadBtn.disabled = false;
-    }
-  });
+      try {
+        updateStatus('Proofreading...');
+        proofreadBtn.disabled = true;
+        
+        const result = await proofreadText(text);
+        coverLetterEl.value = result.corrected || result.correctedText || text;
+        
+        updateStatus('Proofreading complete!');
+      } catch (error) {
+        updateStatus('Proofreading failed');
+        log(`Proofread error: ${error.message}`, true);
+      } finally {
+        proofreadBtn.disabled = false;
+      }
+    });
+  }
   
   // Copy handler
   copyBtn.addEventListener('click', async () => {

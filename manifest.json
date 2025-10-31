@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Job Applier — Apply Assistant",
+  "name": "JobBuddy — Apply Assistant",
   "version": "1.0.0",
   "description": "Summarize job postings, tailor resume bullets and draft cover letters using Chrome built-in AI (Gemini Nano APIs).",
   "permissions": [
